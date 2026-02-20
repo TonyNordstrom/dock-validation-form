@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dock Validation – Public Form</title>
+<link rel="icon" href="data:," />
+<style>
+  :root{
+    --brand:#0a5bd3; --ok:#1a7f37; --warn:#b54708; --fail:#c01818;
+    --bg:#f6f7fb; --text:#1f2328; --muted:#6e7781; --border:#d0d7de;
+  }
+  *{box-sizing:border-box}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:var(--text)}
+  header{background:#fff;border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:2}
+  header h1{margin:0;font-size:18px}
+  main{max-width:920px;margin:24px auto;padding:0 16px 48px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
+  .row{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+  .col-6{grid-column:span 6} .col-4{grid-column:span 4} .col-8{grid-column:span 8}
+  .col-12{grid-column:span 12}
+  @media (max-width:720px){.col-6,.col-4,.col-8{grid-column:span 12}}
+  label{font-weight:600;display:block;margin:6px 0}
+  input[type=text], input[type=number], select, textarea{
+    width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff
+  }
+  textarea{min-height:70px}
+  .muted{color:var(--muted);font-size:13px}
+  .help{font-size:13px;color:var(--muted);margin-top:4px}
+  .section{display:none}
+  .section.active{display:block}
+  .q{border:1px dashed var(--border);border-radius:10px;padding:14px;margin:10px 0;background:#fbfcff}
+  .q h4{margin:.2rem 0 .5rem 0;font-size:15px}
+  .choices{display:flex;gap:14px;align-items:center;margin-top:6px}
+  .chip{display:inline-block;padding:4px 10px;border:1px solid var(--border);border-radius:20px}
+  .note{background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;border-radius:8px;padding:10px;margin-top:8px}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .fail{color:var(--fail)}
+  .hidden{display:none !important}
+  .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+  button{
+    appearance:none;border:1px solid var(--border);background:#fff;border-radius:8px;padding:10px 14px;
+    cursor:pointer;font-weight:600
+  }
+  button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  canvas{width:100%;max-width:520px;height:160px;border:1px solid var(--border);border-radius:8px;background:#fff}
+  .hr{height:1px;background:var(--border);margin:18px 0}
+  .stepper{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px}
+  .step{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--muted);font-size:12px}
+  .step.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .success{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:8px;padding:14px}
+  .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:8px;padding:10px;margin-top:8px}
+  .required::after{content:" *";color:var(--fail)}
+</style>
+</head>
+<body>
+<header><h1>Dock Validation – Public Submission</h1></header>
+<main>
+  <!-- Stepper -->
+  <div class="stepper" id="stepper"></div>
+
+  <!-- BASIC INFORMATION -->
+  <section class="card section active" id="sec-basic">
+    <h2>Basic Information</h2>
+    <div class="row">
+      <div class="col-6">
+        <label class="required" for="empName">Employee Name</label>
+        <input id="empName" autocomplete="name" required />
+      </div>
+      <div class="col-6">
+        <label class="required" for="empNo">Employee Number</label>
+        <input id="empNo" inputmode="numeric" />
+      </div>
+      <div class="col-4">
+        <label class="required" for="dockDoor">Dock Door Number</label>
+        <input id="dockDoor" />
+      </div>
+      <div class="col-4">
+        <label class="required" for="vehicleNo">Vehicle Number</label>
+        <input id="vehicleNo" />
+      </div>
+      <div class="col-4">
+        <label class="required">Shift</label>
+        <div class="choices">
+          <label><input type="radio" name="shift" value="1st Shift"> 1st Shift</label>
+          <label><input type="radio" name="shift" value="2nd Shift"> 2nd Shift</label>
+        </div>
+      </div>
+      <div class="col-12">
+        <label class="required" for="checklistType">Dock Validation Type</label>
+        <select id="checklistType">
+          <option value="">— Select —</option>
+          <option>Long Box Trailer Dock Validation Checklist</option>
+          <option>Half Set Trailer Dock Validation Checklist</option>
+          <option>Box Truck Dock Validation Checklist</option>
+        </select>
+        <div class="help">This controls which question path appears next.</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="toVisual">Start Visual Check</button>
+    </div>
+  </section>
+
+  <!-- VISUAL CHECK -->
+  <section class="card section" id="sec-visual">
+    <h2>Visual Check</h2>
+    <div id="vc-container"></div>
+    <div class="actions">
+      <button id="vc-prev">Back</button>
+      <button class="primary" id="vc-next">Next section</button>
+    </div>
+  </section>
+
+  <!-- DEDICATED CARRIER VALIDATION (Long/Half Set) -->
+  <section class="card section" id="sec-dcv">
+    <h2>Dedicated Carrier Validation</h2>
+    <div id="dcv-container"></div>
+    <div class="actions">
+      <button id="dcv-prev">Back</button>
+      <button class="primary" id="dcv-next">Next section</button>
+    </div>
+  </section>
+
+  <!-- CARRIER DRIVER VALIDATION (Box Truck) -->
+  <section class="card section" id="sec-cdv">
+    <h2>Carrier Driver Validation</h2>
+    <div id="cdv-container"></div>
+    <div class="actions">
+      <button id="cdv-prev">Back</button>
+      <button class="primary" id="cdv-next">Next section</button>
+    </div>
+  </section>
+
+  <!-- DRIVER / OUTCOME -->
+  <section class="card section" id="sec-outcome">
+    <h2>Driver / Outcome</h2>
+    <div class="row">
+      <div class="col-6" id="driverNameWrap">
+        <label class="required" for="driverName" id="driverLabel">JB Hunt / Ryder Driver Name</label>
+        <input id="driverName" />
+      </div>
+      <div class="col-6 hidden" id="carrierNameWrap">
+        <label class="required" for="carrierName">Carrier Name</label>
+        <input id="carrierName" />
+      </div>
+      <div class="col-12">
+        <label class="required">Outcome</label>
+        <div class="choices">
+          <label><input type="radio" name="outcome" value="Pass (✓)"> Pass (✓)</label>
+          <label><input type="radio" name="outcome" value="Fail (X)"> Fail (X)</label>
+        </div>
+        <div id="failMsg" class="note hidden"><strong>STOP</strong> and notify a Manager immediately.</div>
+      </div>
+      <div class="col-12">
+        <div class="hr"></div>
+        <h3>Signature</h3>
+        <p class="muted">Use your finger/mouse to sign in the box.</p>
+        <canvas id="sigPad" aria-label="Signature pad"></canvas>
+        <div class="actions">
+          <button type="button" id="sigClear">Clear signature</button>
+        </div>
+      </div>
+      <div class="col-12">
+        <h3>Photo</h3>
+        <input id="photo" type="file" accept="image/*" capture="environment" />
+        <div class="help">You can take a picture or upload an image.</div>
+      </div>
+      <div class="col-12">
+        <label for="notes">Additional Notes (optional)</label>
+        <textarea id="notes" placeholder="Optional"></textarea>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="outcome-prev">Back</button>
+      <button class="primary" id="submitBtn">Submit</button>
+    </div>
+  </section>
+
+  <!-- SUCCESS -->
+  <section class="card section" id="sec-success">
+    <h2>Submission received</h2>
+    <div class="success">
+      Your dock validation was captured locally. A **receipt JSON** was downloaded to your device.
+      If you’d like to post this to a server later, set <code>CONFIG.postUrl</code> in the code.
+    </div>
+    <div class="actions">
+      <button id="submitAnother">Submit another response</button>
+    </div>
+  </section>
+</main>
+
+<!-- Signature pad library -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js" integrity="sha384-yI4v5s5dnKfYI1zWfJtVt2wF2FzQeH5fUzL1gTX1g0S2qHiyd0qzjOMKqV6jqsES" crossorigin="anonymous"></script>
+<script>
+/* =========================================================================================
+   CONFIG
+   -----------------------------------------------------------------------------------------
+   By default, submissions are saved as a downloadable JSON file (no server needed).
+   To POST to a backend, set CONFIG.postUrl to your HTTPS endpoint.
+   You can handle uploads as Base64 fields (signature/photo) in your server.
+   =======================================================================================*/
+const CONFIG = {
+  postUrl: "",           // e.g. "https://your-endpoint.example/submit"
+  method: "POST",        // "POST"
+  saveAsFile: true       // Keep true to download a JSON receipt locally
+};
+
+/* =========================================================================================
+   Utilities
+   =======================================================================================*/
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const stepper = $("#stepper");
+const sections = ["sec-basic","sec-visual","sec-dcv","sec-cdv","sec-outcome","sec-success"];
+function showSection(id){
+  sections.forEach(s=>$("#"+s).classList.toggle("active", s===id));
+  renderStepper(id);
+  scrollTo({top:0,behavior:"smooth"});
+}
+function renderStepper(activeId){
+  const names = ["Basic","Visual","Dedicated Carrier","Carrier Driver","Outcome","Done"];
+  stepper.innerHTML = sections.map((s,i)=>{
+    const on = s===activeId ? "step on":"step";
+    return `<div class="${on}">${names[i]}</div>`;
+  }).join("");
+}
+function required(val){ return val && String(val).trim().length>0; }
+function fileToBase64(file){ return new Promise((resolve,reject)=>{
+  const r = new FileReader();
+  r.onload = () => resolve(r.result);
+  r.onerror = reject;
+  r.readAsDataURL(file);
+});}
+
+/* =========================================================================================
+   Dynamic question builders
+   =======================================================================================*/
+const TYPES = {
+  LONG:  "Long Box Trailer Dock Validation Checklist",
+  HALF:  "Half Set Trailer Dock Validation Checklist",
+  BOX:   "Box Truck Dock Validation Checklist"
+};
+function qYesNo({id,label,afterNoSkipTo,leaderPrompt=true,noteOnYes=""}){
+  // Returns a DOM block for a Yes/No question with optional Leader name prompt on "No"
+  const wrap = document.createElement("div");
+  wrap.className = "q";
+  wrap.dataset.qid = id;
+  wrap.innerHTML = `
+    <h4>${label}</h4>
+    <div class="choices">
+      <label><input type="radio" name="${id}" value="Yes"> Yes</label>
+      <label><input type="radio" name="${id}" value="No"> No</label>
+      ${noteOnYes ? `<span class="chip warn">${noteOnYes}</span>` : ""}
+    </div>
+    <div class="leader hidden">
+      <div class="note"><strong>Please engage a leader</strong> to complete the previous task and resubmit form.</div>
+      <label class="required" for="${id}_leader">Leader Name</label>
+      <input id="${id}_leader" />
+    </div>
+  `;
+  // Attach behavior
+  const radios = wrap.querySelectorAll(`input[name="${id}"]`);
+  radios.forEach(r=>{
+    r.addEventListener("change", ()=>{
+      const isNo = r.value==="No" && r.checked;
+      const leader = wrap.querySelector(".leader");
+      if(leader && leaderPrompt) leader.classList.toggle("hidden", !isNo);
+      if(isNo && afterNoSkipTo){
+        // Mark current section as complete and skip
+        wrap.closest(".section").dataset.skipTo = afterNoSkipTo;
+        // Disable remaining questions in this section
+        disableFollowingQuestions(wrap);
+      }else{
+        // If re-selected Yes after No, re-enable subsequent questions
+        wrap.closest(".section").dataset.skipTo = "";
+        enableFollowingQuestions(wrap);
+      }
+    });
+  });
+  return wrap;
+}
+function disableFollowingQuestions(node){
+  // Disable/hide all following .q siblings
+  let n = node.nextElementSibling;
+  while(n){
+    if(n.classList.contains("q")) n.classList.add("hidden");
+    n = n.nextElementSibling;
+  }
+}
+function enableFollowingQuestions(node){
+  // Re-show all .q siblings (used when user changes mind)
+  let parent = node.parentElement;
+  parent.querySelectorAll(".q.hidden").forEach(el=>el.classList.remove("hidden"));
+}
+
+/* =========================================================================================
+   Build Visual & Validation sections based on selected type
+   =======================================================================================*/
+function buildVisual(type){
+  const vc = $("#vc-container");
+  vc.innerHTML = "";
+  if(type===TYPES.LONG || type===TYPES.HALF){
+    vc.append(
+      qYesNo({id:"vc_docklock", label:"Is Dock Lock engaged?", afterNoSkipTo:"sec-dcv"}),
+      qYesNo({id:"vc_clearance", label:"Does overhead clearance accommodate equipment, person(s), or carrier?", afterNoSkipTo:"sec-dcv"}),
+      qYesNo({id:"vc_plate", label:"Is the Dock Plate secure?", afterNoSkipTo:"sec-dcv"}),
+      qYesNo({id:"vc_walls", label:"Are the walls, roof, and doors of trailer in good condition (no structural damage)?", afterNoSkipTo:"sec-dcv"}),
+      qYesNo({id:"vc_floor", label:"Is the floor clean and clear of cracks, holes, delamination, or excessive wear?", afterNoSkipTo:"sec-dcv"})
+    );
+  } else if(type===TYPES.BOX){
+    vc.append(
+      qYesNo({id:"bx_driverout", label:"Driver is out of the cab", afterNoSkipTo:"sec-cdv"}),
+      qYesNo({id:"bx_clearance", label:"Does overhead clearance accommodate equipment, person(s), or carrier?", afterNoSkipTo:"sec-cdv"}),
+      qYesNo({id:"bx_plate", label:"Dock plate secure if elevation is similar?", afterNoSkipTo:"sec-cdv"}),
+      qYesNo({id:"bx_walls", label:"Are the walls, roof, and doors in good condition (no structural damage)?", afterNoSkipTo:"sec-cdv"}),
+      qYesNo({id:"bx_floor", label:"Is the floor clean and clear of cracks, holes, delamination, or excessive wear?", afterNoSkipTo:"sec-cdv"}),
+      // Special: Fall risk – either selection moves to next section; Yes shows a note
+      qYesNo({id:"bx_fallrisk", label:"Fall risk of 4 feet or greater.", afterNoSkipTo:"sec-cdv", leaderPrompt:false, noteOnYes:"If YES, box truck must be moved to yard or ramp."})
+    );
+    // Force skip to next section after any selection on fall risk
+    vc.querySelectorAll('input[name="bx_fallrisk"]').forEach(r=>{
+      r.addEventListener("change", ()=>{
+        $("#sec-visual").dataset.skipTo = "sec-cdv";
+      });
+    });
+  }
+}
+function buildDCV(type){
+  const dcv = $("#dcv-container");
+  dcv.innerHTML = "";
+  if(type===TYPES.LONG || type===TYPES.HALF){
+    dcv.append(
+      qYesNo({id:"dcv_landing", label:"Landing Gear, crossbars, ICC Bar. No damage, deformation, or missing pieces.", afterNoSkipTo:"sec-outcome"}),
+      qYesNo({id:"dcv_exterior", label:"Exterior walls, roof, & doors. No damage that affects structural integrity.", afterNoSkipTo:"sec-outcome"})
+    );
+    if(type===TYPES.HALF){
+      dcv.append(
+        qYesNo({id:"dcv_jack", label:"Jack Stand positioned snugly at the center of the front of the trailer.", afterNoSkipTo:"sec-outcome"})
+      );
+    }
+  }
+}
+function buildCDV(){
+  const cdv = $("#cdv-container");
+  cdv.innerHTML = "";
+  cdv.append(
+    qYesNo({id:"cdv_engine", label:"Engine is shut off", afterNoSkipTo:"sec-outcome"}),
+    qYesNo({id:"cdv_brake", label:"Emergency brake is applied", afterNoSkipTo:"sec-outcome"}),
+    qYesNo({id:"cdv_chocks", label:"Wheel chocks applied by the driver", afterNoSkipTo:"sec-outcome"})
+  );
+}
+
+/* =========================================================================================
+   Signature pad
+   =======================================================================================*/
+let sigPad, sigCanvas;
+function initSignature(){
+  sigCanvas = document.getElementById("sigPad");
+  // Resize for device pixel ratio
+  function resize(){
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    sigCanvas.width  = sigCanvas.offsetWidth * ratio;
+    sigCanvas.height = sigCanvas.offsetHeight * ratio;
+    sigPad && sigPad.clear();
+  }
+  window.addEventListener("resize", resize);
+  resize();
+  sigPad = new SignaturePad(sigCanvas, {backgroundColor:"#fff"});
+  $("#sigClear").addEventListener("click", ()=>sigPad.clear());
+}
+
+/* =========================================================================================
+   Navigation + validation
+   =======================================================================================*/
+function goNextFrom(sectionId){
+  const sec = $("#"+sectionId);
+  const skipTo = sec.dataset.skipTo;
+  if(skipTo){ showSection(skipTo); return; }
+  // default linear flow
+  if(sectionId==="sec-basic")      showSection("sec-visual");
+  else if(sectionId==="sec-visual"){
+    const type = $("#checklistType").value;
+    if(type===TYPES.BOX) showSection("sec-cdv"); else showSection("sec-dcv");
+  }
+  else if(sectionId==="sec-dcv" || sectionId==="sec-cdv") showSection("sec-outcome");
+}
+function goBackFrom(sectionId){
+  if(sectionId==="sec-visual") showSection("sec-basic");
+  if(sectionId==="sec-dcv")    showSection("sec-visual");
+  if(sectionId==="sec-cdv")    showSection("sec-visual");
+  if(sectionId==="sec-outcome"){
+    const type = $("#checklistType").value;
+    showSection(type===TYPES.BOX ? "sec-cdv" : "sec-dcv");
+  }
+}
+
+/* =========================================================================================
+   Collect + Submit
+   =======================================================================================*/
+async function collectData(){
+  const type = $("#checklistType").value;
+  const outcome = $$('input[name="outcome"]').find(r=>r.checked)?.value || "";
+  const photoFile = $("#photo").files[0];
+  const photoB64 = photoFile ? await fileToBase64(photoFile) : "";
+  const sigB64 = !sigPad.isEmpty() ? sigPad.toDataURL() : "";
+
+  const readYN = name => ($$('input[name="'+name+'"]').find(x=>x.checked)?.value)||"";
+  const leader = id => ($("#"+id+"_leader")?.value)||"";
+
+  const payload = {
+    meta:{
+      timestamp: new Date().toISOString(),
+      submissionId: crypto.randomUUID()
+    },
+    basic:{
+      employeeName: $("#empName").value,
+      employeeNumber: $("#empNo").value,
+      dockDoorNumber: $("#dockDoor").value,
+      vehicleNumber: $("#vehicleNo").value,
+      shift: $$('input[name="shift"]').find(r=>r.checked)?.value || "",
+      checklistType: type
+    },
+    visual:{},
+    validation:{},
+    driver:{
+      driverName: $("#driverName").value,
+      carrierName: $("#carrierName").value || ""
+    },
+    outcome,
+    notes: $("#notes").value || "",
+    signatureImage: sigB64,   // PNG data URL
+    photoImage: photoB64      // Image data URL (if selected)
+  };
+
+  if(type===TYPES.LONG || type===TYPES.HALF){
+    payload.visual = {
+      dockLock: readYN("vc_docklock"),
+      dockLock_leader: leader("vc_docklock"),
+      clearance: readYN("vc_clearance"),
+      clearance_leader: leader("vc_clearance"),
+      plate: readYN("vc_plate"),
+      plate_leader: leader("vc_plate"),
+      walls: readYN("vc_walls"),
+      walls_leader: leader("vc_walls"),
+      floor: readYN("vc_floor"),
+      floor_leader: leader("vc_floor")
+    };
+    payload.validation = {
+      landingGear: readYN("dcv_landing"),
+      landingGear_leader: leader("dcv_landing"),
+      exterior: readYN("dcv_exterior"),
+      exterior_leader: leader("dcv_exterior"),
+      jackStand: type===TYPES.HALF ? readYN("dcv_jack") : "",
+      jackStand_leader: type===TYPES.HALF ? leader("dcv_jack") : ""
+    };
+  } else { // BOX
+    payload.visual = {
+      driverOut: readYN("bx_driverout"),
+      driverOut_leader: leader("bx_driverout"),
+      clearance: readYN("bx_clearance"),
+      clearance_leader: leader("bx_clearance"),
+      plate: readYN("bx_plate"),
+      plate_leader: leader("bx_plate"),
+      walls: readYN("bx_walls"),
+      walls_leader: leader("bx_walls"),
+      floor: readYN("bx_floor"),
+      floor_leader: leader("bx_floor"),
+      fallRisk4ft: readYN("bx_fallrisk")
+    };
+    payload.validation = {
+      engineOff: readYN("cdv_engine"),
+      engineOff_leader: leader("cdv_engine"),
+      emergencyBrake: readYN("cdv_brake"),
+      emergencyBrake_leader: leader("cdv_brake"),
+      wheelChocks: readYN("cdv_chocks"),
+      wheelChocks_leader: leader("cdv_chocks")
+    };
+  }
+  return payload;
+}
+function downloadJSON(data, fileName){
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* =========================================================================================
+   Wire up UI
+   =======================================================================================*/
+window.addEventListener("DOMContentLoaded", ()=>{
+  renderStepper("sec-basic");
+  initSignature();
+
+  // Start Visual Check
+  $("#toVisual").addEventListener("click", ()=>{
+    // Basic validations
+    if(!required($("#empName").value) || !required($("#empNo").value) ||
+       !required($("#dockDoor").value) || !required($("#vehicleNo").value) ||
+       !required($("#checklistType").value) || !$$('input[name="shift"]').some(r=>r.checked)){
+      alert("Please complete all required basic fields.");
+      return;
+    }
+    const type = $("#checklistType").value;
+    buildVisual(type);
+    buildDCV(type);
+    buildCDV();
+    // Adjust driver labels for Box vs Trailer
+    const isBox = type===TYPES.BOX;
+    $("#driverLabel").textContent = isBox ? "Carrier / Driver Name" : "JB Hunt / Ryder Driver Name";
+    $("#carrierNameWrap").classList.toggle("hidden", !isBox);
+    showSection("sec-visual");
+  });
+
+  // Visual nav
+  $("#vc-prev").addEventListener("click", ()=>goBackFrom("sec-visual"));
+  $("#vc-next").addEventListener("click", ()=>goNextFrom("sec-visual"));
+
+  // DCV nav
+  $("#dcv-prev").addEventListener("click", ()=>goBackFrom("sec-dcv"));
+  $("#dcv-next").addEventListener("click", ()=>goNextFrom("sec-dcv"));
+
+  // CDV nav
+  $("#cdv-prev").addEventListener("click", ()=>goBackFrom("sec-cdv"));
+  $("#cdv-next").addEventListener("click", ()=>goNextFrom("sec-cdv"));
+
+  // Outcome behavior
+  $$('input[name="outcome"]').forEach(r=>{
+    r.addEventListener("change", ()=>{
+      $("#failMsg").classList.toggle("hidden", r.value!=="Fail (X)");
+    });
+  });
+  $("#outcome-prev").addEventListener("click", ()=>goBackFrom("sec-outcome"));
+
+  // Submit
+  $("#submitBtn").addEventListener("click", async ()=>{
+    // Minimal validation
+    const type = $("#checklistType").value;
+    const needCarrier = (type===TYPES.BOX);
+    const outcome = $$('input[name="outcome"]').some(r=>r.checked);
+    if(!required($("#driverName").value) || (needCarrier && !required($("#carrierName").value)) || !outcome){
+      alert("Please complete Driver/Carrier and Outcome.");
+      return;
+    }
+    const payload = await collectData();
+
+    // Save locally as JSON
+    if(CONFIG.saveAsFile){
+      const fileName = `dock_validation_${payload.meta.submissionId}.json`;
+      downloadJSON(payload, fileName);
+    }
+    // Optional POST to backend
+    if(CONFIG.postUrl){
+      try{
+        const res = await fetch(CONFIG.postUrl, {
+          method: CONFIG.method,
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify(payload)
+        });
+        if(!res.ok) throw new Error("Server returned "+res.status);
+      }catch(err){
+        alert("Warning: failed to POST to server. Local JSON was still downloaded.\n"+err.message);
+      }
+    }
+    showSection("sec-success");
+  });
+
+  // Submit another
+  $("#submitAnother").addEventListener("click", ()=>{
+    // Reset simple inputs
+    $$("input, textarea, select").forEach(e=>{
+      if(e.type==="radio" || e.type==="checkbox") e.checked=false;
+      else if(e.type==="file") e.value="";
+      else e.value="";
+    });
+    sigPad.clear();
+    // Reset dynamic sections
+    $("#vc-container").innerHTML="";
+    $("#dcv-container").innerHTML="";
+    $("#cdv-container").innerHTML="";
+    sections.forEach(id=>$("#"+id).dataset.skipTo="");
+    showSection("sec-basic");
+  });
+});
+</script>
+</body>
+</html>
