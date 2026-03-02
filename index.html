@@ -42,7 +42,7 @@
     cursor:pointer;font-weight:600
   }
   button.primary{background:var(--brand);border-color:var(--brand);color:#fff}
-  canvas{width:100%;max-width:520px;height:160px;border:1px solid var(--border);border-radius:8px;background:#fff}
+  canvas{width:100%;max-width:520px;height:160px;border:1px solid var(--border);border-radius:8px;background:#fff;touch-action:none}
   .hr{height:1px;background:var(--border);margin:18px 0}
   .stepper{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px}
   .step{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--muted);font-size:12px}
@@ -216,6 +216,11 @@ function showSection(id){
   sections.forEach(s=>$("#"+s).classList.toggle("active", s===id));
   renderStepper(id);
   scrollTo({top:0,behavior:"smooth"});
+
+  // Resize signature AFTER the canvas becomes visible
+  if(id === "sec-outcome"){
+    setTimeout(resizeSignatureCanvas, 50);
+  }
 }
 function renderStepper(activeId){
   const names = ["Basic","Visual","Dedicated Carrier","Carrier Driver","Outcome","Done"];
@@ -354,19 +359,38 @@ function buildCDV(){
    Signature pad
    =======================================================================================*/
 let sigPad, sigCanvas;
+
+function resizeSignatureCanvas(){
+  sigCanvas = document.getElementById("sigPad");
+  if(!sigCanvas) return;
+
+  // IMPORTANT: if the section is hidden, width/height may be 0
+  const rect = sigCanvas.getBoundingClientRect();
+  if(rect.width === 0 || rect.height === 0) return;
+
+  const ratio = Math.max(window.devicePixelRatio || 1, 1);
+  sigCanvas.width  = rect.width * ratio;
+  sigCanvas.height = rect.height * ratio;
+
+  const ctx = sigCanvas.getContext("2d");
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(ratio, ratio);
+
+  if(sigPad) sigPad.clear();
+}
+
 function initSignature(){
   sigCanvas = document.getElementById("sigPad");
-  // Resize for device pixel ratio
-  function resize(){
-    const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    sigCanvas.width  = sigCanvas.offsetWidth * ratio;
-    sigCanvas.height = sigCanvas.offsetHeight * ratio;
-    sigPad && sigPad.clear();
-  }
-  window.addEventListener("resize", resize);
-  resize();
-  sigPad = new SignaturePad(sigCanvas, {backgroundColor:"#fff"});
+  sigPad = new SignaturePad(sigCanvas, { backgroundColor:"#fff" });
+
+  // Prevent scrolling / selection issues (helps touch + trackpads)
+  sigCanvas.style.touchAction = "none";
+
+  window.addEventListener("resize", resizeSignatureCanvas);
   $("#sigClear").addEventListener("click", ()=>sigPad.clear());
+
+  // Do not rely on initial load sizing (canvas may be hidden)
+  // We will resize when Outcome section is shown.
 }
 
 /* =========================================================================================
